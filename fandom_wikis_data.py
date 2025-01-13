@@ -1,14 +1,13 @@
-def get_fandom_wikis_earning_data(get_new_data: bool, create_EarningRates_file: bool):
+def get_fandom_wikis_earning_data():
     import json
+    import requests
     
-    if get_new_data:
-        import requests
-        response = requests.get('https://dragonvale.fandom.com/wiki/Data:EarningRates.json?action=raw')
-        response.raise_for_status()
-        EarningRates = json.loads(response.text)
-    else:
-        with open('EarningRates.json') as file:
-            EarningRates = json.load(file)
+    print(f'Collecting EarningRates.json from the Fandom.')
+    
+    response = requests.get('https://dragonvale.fandom.com/wiki/Data:EarningRates.json?action=raw')
+    response.raise_for_status()
+    EarningRates = json.loads(response.text)
+    
     
     # fixing error is the data set
     # Note: Yolkwing, Holly, and Procyon all have incorrect earning tables at this point in time, but they aren't fixed here.
@@ -39,8 +38,30 @@ def get_fandom_wikis_earning_data(get_new_data: bool, create_EarningRates_file: 
             earning_tuple = tuple(data['Rates'])
             if earning_tuple in earning_tuple_correction.keys(): EarningRates['earningRates'][name]['Rates'] = list(earning_tuple_correction[earning_tuple])
     
-    if create_EarningRates_file:
-        with open('EarningRates.json', 'w+') as file:
-            json.dump(EarningRates, file, indent=4, separators=(',', ': '), sort_keys=True)
-    
     return EarningRates
+
+
+def get_fandom_wiki_json_by_file_name(file_name):
+    import requests
+    
+    if file_name == 'EarningRates': raise Exception('Use get_fandom_wikis_earning_data to get EarningRates.json')
+    
+    print(f'Collecting {file_name} from the Fandom.')
+    response = requests.get('https://dragonvale.fandom.com/wiki/Data:' + file_name + '.json?action=raw')
+    response.raise_for_status()
+    data = response.json()
+
+    return data
+
+
+def fandom_time_to_ticks(fandom_time_string):
+    import re
+    
+    ticks = int()
+    match = re.search('(\d+) H', fandom_time_string)
+    if match != None: ticks += int(match.groups()[0]) * 60 * 60 * 100
+    match = re.search('(\d+) M', fandom_time_string)
+    if match != None: ticks += int(match.groups()[0]) * 60 * 100
+    match = re.search('(\d+) S', fandom_time_string)
+    if match != None: ticks += int(match.groups()[0]) * 100
+    return ticks
